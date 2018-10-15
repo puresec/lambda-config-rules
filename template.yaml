@@ -1,0 +1,187 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+    FunctionShieldToken:
+        Description: To get a token please visit http://bit.ly/2AaBJ3x
+        Type: String
+        Default: UNDEFINED
+Resources:
+  #############################################################
+  #   Detect functions that are created through the console   #
+  #############################################################
+  FunctionForLambdaFunctionCreatedInConsole:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: config-rule-lambda-function-created-in-console
+      CodeUri: src/
+      Handler: lambda_function_created_in_console.handler
+      Runtime: nodejs8.10
+      MemorySize: 128
+      Timeout: 300
+      ReservedConcurrentExecutions: 1
+      Tracing: Active
+      Environment:
+        Variables:
+          FUNCTION_SHIELD_TOKEN: !Ref FunctionShieldToken
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - config:PutEvaluations
+                - lambda:ListFunctions
+                - cloudtrail:LookupEvents
+              Resource: '*'
+  ConfigRuleForLambdaFunctionCreatedInConsole:
+    Type: AWS::Config::ConfigRule
+    Properties:
+      ConfigRuleName: lambda-function-created-in-console
+      Description: Lambda functions should be created by CI/CD process.
+      Source:
+        Owner: CUSTOM_LAMBDA
+        SourceIdentifier: !GetAtt FunctionForLambdaFunctionCreatedInConsole.Arn
+        SourceDetails:
+        - EventSource: aws.config
+          MessageType: ScheduledNotification
+    DependsOn:
+    - PermissionForLambdaFunctionCreatedInConsole
+  PermissionForLambdaFunctionCreatedInConsole:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt FunctionForLambdaFunctionCreatedInConsole.Arn
+      Action: lambda:InvokeFunction
+      Principal: config.amazonaws.com
+  #############################################################
+  #         Detect functions that share iam role              #
+  #############################################################
+  FunctionForLambdaFunctionSharedRole:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: config-rule-lambda-function-shared-role
+      CodeUri: src/
+      Handler: lambda_function_shared_role.handler
+      Runtime: nodejs8.10
+      MemorySize: 128
+      Timeout: 300
+      ReservedConcurrentExecutions: 1
+      Tracing: Active
+      Environment:
+        Variables:
+          FUNCTION_SHIELD_TOKEN: !Ref FunctionShieldToken
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - config:PutEvaluations
+                - lambda:ListFunctions
+              Resource: '*'
+  ConfigRuleForLambdaFunctionSharedRole:
+    Type: AWS::Config::ConfigRule
+    Properties:
+      ConfigRuleName: lambda-function-shared-role
+      Description: Each Lambda function should have its own IAM role
+      Source:
+        Owner: CUSTOM_LAMBDA
+        SourceIdentifier: !GetAtt FunctionForLambdaFunctionSharedRole.Arn
+        SourceDetails:
+        - EventSource: aws.config
+          MessageType: ScheduledNotification
+    DependsOn:
+    - PermissionForLambdaFunctionSharedRole
+  PermissionForLambdaFunctionSharedRole:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt FunctionForLambdaFunctionSharedRole.Arn
+      Action: lambda:InvokeFunction
+      Principal: config.amazonaws.com
+  #############################################################
+  #        Detect functions with multiple triggers            #
+  #############################################################
+  FunctionForLambdaFunctionWithMultipleTriggers:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: config-rule-lambda-function-with-multiple-triggers
+      CodeUri: src/
+      Handler: lambda_function_with_multiple_triggers.handler
+      Runtime: nodejs8.10
+      MemorySize: 128
+      Timeout: 300
+      ReservedConcurrentExecutions: 1
+      Tracing: Active
+      Environment:
+        Variables:
+          FUNCTION_SHIELD_TOKEN: !Ref FunctionShieldToken
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - config:PutEvaluations
+                - lambda:ListFunctions
+                - lambda:GetPolicy
+              Resource: '*'
+  ConfigRuleForLambdaFunctionWithMultipleTriggers:
+    Type: AWS::Config::ConfigRule
+    Properties:
+      ConfigRuleName: lambda-function-with-multiple-triggers
+      Description: Each Lambda function should be triggered by one event source
+      Source:
+        Owner: CUSTOM_LAMBDA
+        SourceIdentifier: !GetAtt FunctionForLambdaFunctionWithMultipleTriggers.Arn
+        SourceDetails:
+        - EventSource: aws.config
+          MessageType: ScheduledNotification
+    DependsOn:
+    - PermissionForLambdaFunctionWithMultipleTriggers
+  PermissionForLambdaFunctionWithMultipleTriggers:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt FunctionForLambdaFunctionWithMultipleTriggers.Arn
+      Action: lambda:InvokeFunction
+      Principal: config.amazonaws.com
+  #############################################################
+  #      Detect functions with wildcard action permission     #
+  #############################################################
+  FunctionForLambdaFunctionWithWildcardActionPermission:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: config-rule-lambda-function-with-wildcard-action-permission
+      CodeUri: src/
+      Handler: lambda_function_with_wildcard_action_permission.handler
+      Runtime: nodejs8.10
+      MemorySize: 128
+      Timeout: 300
+      ReservedConcurrentExecutions: 1
+      Tracing: Active
+      Environment:
+        Variables:
+          FUNCTION_SHIELD_TOKEN: !Ref FunctionShieldToken
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - config:PutEvaluations
+                - lambda:ListFunctions
+                - iam:GetAccountAuthorizationDetails
+              Resource: '*'
+  ConfigRuleForLambdaFunctionWithWildcardActionPermission:
+    Type: AWS::Config::ConfigRule
+    Properties:
+      ConfigRuleName: lambda-function-with-wildcard-action-permission
+      Description: Actions in Lambda permissions should not contain wildcards
+      Source:
+        Owner: CUSTOM_LAMBDA
+        SourceIdentifier: !GetAtt FunctionForLambdaFunctionWithWildcardActionPermission.Arn
+        SourceDetails:
+        - EventSource: aws.config
+          MessageType: ScheduledNotification
+    DependsOn:
+    - PermissionForLambdaFunctionWithWildcardActionPermission
+  PermissionForLambdaFunctionWithWildcardActionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt FunctionForLambdaFunctionWithWildcardActionPermission.Arn
+      Action: lambda:InvokeFunction
+      Principal: config.amazonaws.com

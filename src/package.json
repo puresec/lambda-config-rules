@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "dependencies": {
+    "@puresec/function-shield": "^1.0.7"
+  }
+}
