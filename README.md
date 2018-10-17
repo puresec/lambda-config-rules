@@ -1,4 +1,11 @@
 
+### AWS SAM Application with 4 Config Rules to validate that your AWS Lambda functions follow security best practices
+1. Detects functions created through console
+2. Detects functions with shared IAM role
+3. Detects functions with multiple triggers
+4. Detects functions with wildcard action permissions
+
+#### Deployment Instructions
 
 Install dependencies
 ```shell
